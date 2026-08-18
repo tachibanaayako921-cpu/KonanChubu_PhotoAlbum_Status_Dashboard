@@ -20,8 +20,10 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; transition: all 0.3s; }
     .badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 12px; font-weight: bold; }
-    .badge-done { background: #d1fae5; color: #065f46; }
-    .badge-undone { background: #fee2e2; color: #991b1b; }
+    .badge-done    { background: #d1fae5; color: #065f46; }
+    .badge-undone  { background: #fee2e2; color: #991b1b; }
+    .badge-jpeg-yes { background: #dbeafe; color: #1e40af; }
+    .badge-jpeg-no  { background: #f3f4f6; color: #6b7280; }
     tr:hover { background-color: #f9fafb; }
 
     /* パスワードモーダル */
@@ -52,7 +54,6 @@
       75% { transform: translateX(6px); }
     }
     .lock-icon { font-size: 48px; text-align: center; margin-bottom: 16px; }
-    /* ロック中はセレクト無効 */
     .select-locked { pointer-events: none; opacity: 0.5; }
   </style>
 </head>
@@ -88,7 +89,6 @@
         <p class="text-indigo-200 text-sm mt-1" id="last-updated">読み込み中...</p>
       </div>
       <div class="flex gap-3 items-center">
-        <!-- ロック状態表示 -->
         <div id="lock-status" class="text-sm px-3 py-1 rounded-full bg-indigo-800 text-indigo-200 hidden">
           🔒 編集ロック中
         </div>
@@ -261,6 +261,7 @@
             <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
               <th class="px-4 py-3 text-left">施設名称</th>
               <th class="px-4 py-3 text-left">機器名称</th>
+              <th class="px-4 py-3 text-center">JPEGデータ</th>
               <th class="px-4 py-3 text-center">現在のステータス</th>
               <th class="px-4 py-3 text-center">変更</th>
               <th class="px-4 py-3 text-center">保存状態</th>
@@ -282,14 +283,14 @@
 
   <script>
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbwyNYHiXfhrGGHyUBVmxBfqlCuXQ74qqX3ARDMm5BO5C07f5oBG5eet-Q9PdGeet-Vo/exec';
-    const STATUS_OPTIONS = ["完全版", "完成品のみ（完成）", "未作成", "完成品のみ（未完成）"];
+    const STATUS_OPTIONS     = ["完全版", "完成品のみ（完成）", "未作成", "完成品のみ（未完成）"];
     const COMPLETED_STATUSES = ["完全版", "完成品のみ（完成）"];
-    const CORRECT_PASSWORD = 'konanchubu';
+    const CORRECT_PASSWORD   = 'konanchubu';
 
-    let allData = null;
+    let allData      = null;
     let chartOverall = null;
     let chartFacility = null;
-    let isUnlocked = false; // ロック状態管理
+    let isUnlocked   = false;
 
     // ========== パスワード関連 ==========
 
@@ -321,26 +322,20 @@
 
     function unlockEditor() {
       isUnlocked = true;
-      // バナー切り替え
       document.getElementById('lock-banner').classList.add('hidden');
       document.getElementById('unlock-banner').classList.remove('hidden');
-      // ヘッダー状態表示
       document.getElementById('lock-status').classList.add('hidden');
       document.getElementById('unlock-status').classList.remove('hidden');
-      // セレクトボックスを有効化
       document.querySelectorAll('.status-select').forEach(el => el.classList.remove('select-locked'));
       showToast('🔓', 'ロックを解除しました。編集が可能です');
     }
 
     function lockEditor() {
       isUnlocked = false;
-      // バナー切り替え
       document.getElementById('lock-banner').classList.remove('hidden');
       document.getElementById('unlock-banner').classList.add('hidden');
-      // ヘッダー状態表示
       document.getElementById('lock-status').classList.remove('hidden');
       document.getElementById('unlock-status').classList.add('hidden');
-      // セレクトボックスを無効化
       document.querySelectorAll('.status-select').forEach(el => el.classList.add('select-locked'));
       showToast('🔒', 'ロックしました');
     }
@@ -355,7 +350,6 @@
       document.getElementById('tab-status').className =
         'tab-btn px-6 py-3 text-sm ' + (page === 'status' ? 'active text-white' : 'text-indigo-200');
 
-      // ステータス管理ページを開いたときにロック状態を表示
       if (page === 'status') {
         document.getElementById('lock-status').classList.remove('hidden');
         if (isUnlocked) {
@@ -370,7 +364,7 @@
     async function loadData() {
       document.getElementById('last-updated').textContent = '読み込み中...';
       try {
-        const res = await fetch(GAS_URL + '?action=getData&t=' + new Date().getTime());
+        const res  = await fetch(GAS_URL + '?action=getData&t=' + new Date().getTime());
         const data = JSON.parse(await res.text());
         if (data.error) throw new Error(data.error);
         allData = data;
@@ -390,12 +384,12 @@
 
     function renderDashboard(data) {
       const { overall, facilityProgress } = data;
-      document.getElementById('kpi-total').textContent     = overall.totalSheets;
-      document.getElementById('kpi-completed').textContent = overall.completedSheets;
-      document.getElementById('kpi-incomplete').textContent= overall.incompleteSheets;
-      document.getElementById('kpi-rate').textContent      = overall.completionRate.toFixed(1) + '%';
-      document.getElementById('progress-bar').style.width  = overall.completionRate.toFixed(1) + '%';
-      document.getElementById('progress-label').textContent= overall.completionRate.toFixed(1) + '%';
+      document.getElementById('kpi-total').textContent      = overall.totalSheets;
+      document.getElementById('kpi-completed').textContent  = overall.completedSheets;
+      document.getElementById('kpi-incomplete').textContent = overall.incompleteSheets;
+      document.getElementById('kpi-rate').textContent       = overall.completionRate.toFixed(1) + '%';
+      document.getElementById('progress-bar').style.width   = overall.completionRate.toFixed(1) + '%';
+      document.getElementById('progress-label').textContent = overall.completionRate.toFixed(1) + '%';
       renderOverallChart(overall);
       renderFacilityChart(facilityProgress);
       renderFacilityTable(facilityProgress);
@@ -443,7 +437,8 @@
           labels,
           datasets: [{
             label: '完了率(%)', data: rates,
-            backgroundColor: rates.map(r => r >= 100 ? '#10b981' : r >= 50 ? '#6366f1' : r >= 20 ? '#f59e0b' : '#f87171'),
+            backgroundColor: rates.map(r =>
+              r >= 100 ? '#10b981' : r >= 50 ? '#6366f1' : r >= 20 ? '#f59e0b' : '#f87171'),
             borderRadius: 6, borderSkipped: false
           }]
         },
@@ -501,8 +496,8 @@
 
       // 施設フィルタ選択肢を動的生成
       const facilitySelect = document.getElementById('filter-facility');
-      const currentVal = facilitySelect.value;
-      const facilities = [...new Set(allData.items.map(i => i.facilityName))];
+      const currentVal     = facilitySelect.value;
+      const facilities     = [...new Set(allData.items.map(i => i.facilityName))];
       facilitySelect.innerHTML = '<option value="">すべて</option>';
       facilities.forEach(f => {
         const opt = document.createElement('option');
@@ -513,8 +508,8 @@
 
       const filtered = allData.items.filter(item => {
         if (filterFacility && item.facilityName !== filterFacility) return false;
-        if (filterStatus === 'completed'  && !item.isCompleted)  return false;
-        if (filterStatus === 'incomplete' &&  item.isCompleted)  return false;
+        if (filterStatus === 'completed'  && !item.isCompleted) return false;
+        if (filterStatus === 'incomplete' &&  item.isCompleted) return false;
         if (filterSearch && !item.equipmentName.toLowerCase().includes(filterSearch)) return false;
         return true;
       });
@@ -524,7 +519,7 @@
       tbody.innerHTML = '';
 
       if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">該当するデータがありません</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">該当するデータがありません</td></tr>';
         return;
       }
 
@@ -532,8 +527,11 @@
         const isCompleted = COMPLETED_STATUSES.includes(item.status);
         const badgeClass  = isCompleted ? 'badge-done' : 'badge-undone';
         const badgeText   = isCompleted ? '✅ 完了' : '⏳ 未完了';
-        // ロック中はセレクトを無効スタイルに
         const lockedClass = isUnlocked ? '' : 'select-locked';
+
+        // JPEGバッジ
+        const jpegClass = item.hasJpeg ? 'badge-jpeg-yes' : 'badge-jpeg-no';
+        const jpegText  = item.hasJpeg ? '🖼️ JPEGデータ有' : '❌ JPEGデータ無';
 
         const tr = document.createElement('tr');
         tr.id = `row-${item.rowIndex}`;
@@ -541,13 +539,18 @@
           <td class="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">${item.facilityName}</td>
           <td class="px-4 py-3 text-sm text-gray-800">${item.equipmentName}</td>
           <td class="px-4 py-3 text-center">
+            <span class="badge ${jpegClass}">${jpegText}</span>
+          </td>
+          <td class="px-4 py-3 text-center">
             <span class="badge ${badgeClass}" id="badge-${item.rowIndex}">${badgeText}</span>
           </td>
           <td class="px-4 py-3 text-center">
             <select class="status-select ${isCompleted ? 'completed' : 'incomplete'} ${lockedClass}"
                     id="select-${item.rowIndex}"
                     onchange="handleStatusChange(${item.rowIndex}, this)">
-              ${STATUS_OPTIONS.map(s => `<option value="${s}" ${s === item.status ? 'selected' : ''}>${s}</option>`).join('')}
+              ${STATUS_OPTIONS.map(s =>
+                `<option value="${s}" ${s === item.status ? 'selected' : ''}>${s}</option>`
+              ).join('')}
             </select>
           </td>
           <td class="px-4 py-3 text-center text-xs text-gray-400" id="save-state-${item.rowIndex}">
@@ -560,7 +563,6 @@
     // ========== ステータス変更 ==========
 
     async function handleStatusChange(rowIndex, selectEl) {
-      // ロック中は変更不可
       if (!isUnlocked) {
         showToast('🔒', 'パスワードを入力してロックを解除してください', true);
         return;
@@ -574,7 +576,7 @@
       badge.className   = 'badge ' + (isCompleted ? 'badge-done' : 'badge-undone');
       badge.textContent = isCompleted ? '✅ 完了' : '⏳ 未完了';
 
-      const saveState = document.getElementById(`save-state-${rowIndex}`);
+      const saveState   = document.getElementById(`save-state-${rowIndex}`);
       saveState.textContent = '保存中...';
       saveState.className   = 'text-xs text-amber-500';
       selectEl.disabled     = true;
@@ -613,17 +615,22 @@
       allData.items.forEach(item => {
         total++;
         const f = item.facilityName;
-        if (!facilityMap[f]) facilityMap[f] = { facilityName: f, totalItems: 0, completedItems: 0, incompleteItems: 0, completionRate: 0 };
+        if (!facilityMap[f]) facilityMap[f] = {
+          facilityName: f, totalItems: 0, completedItems: 0, incompleteItems: 0, completionRate: 0
+        };
         facilityMap[f].totalItems++;
         if (item.isCompleted) { completed++; facilityMap[f].completedItems++; }
-        else { incomplete++; facilityMap[f].incompleteItems++; }
+        else                  { incomplete++; facilityMap[f].incompleteItems++; }
       });
       const rate = total === 0 ? 0 : (completed / total) * 100;
       for (const k in facilityMap) {
         const p = facilityMap[k];
         p.completionRate = p.totalItems === 0 ? 0 : (p.completedItems / p.totalItems) * 100;
       }
-      allData.overall = { totalSheets: total, completedSheets: completed, incompleteSheets: incomplete, completionRate: rate };
+      allData.overall = {
+        totalSheets: total, completedSheets: completed,
+        incompleteSheets: incomplete, completionRate: rate
+      };
       allData.facilityProgress = Object.values(facilityMap);
       renderDashboard(allData);
     }
